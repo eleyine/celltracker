@@ -1,0 +1,34 @@
+<template name="nav">
+  <div class="navbar navbar-fixed-top navbar-inverse">
+    <div class="navbar-inner">
+      <div class="container-fluid">
+        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="brand" href="#">Cell Cluster Visualiser </a>
+        <div class="nav-collapse collapse">
+          <ul class="nav">
+            <li class="active"><a href="#">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#contact">Contact</a></li>
+            <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+              <i class="icon-cog"></i> <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu">
+              <li class="nav-header">Parameters</li>
+              <li><a href="#" id="toolbar-edit-stability">Edit stability function</a></li>
+              <li><a href="#" id="toolbar-edit-diameter">Edit cell diameter</a></li>
+              <li class="divider"></li>              
+              <li class="nav-header">Video</li>
+              <li><a href="#" id="toolbar-edit-speed"> Change play speed</a></li>
+            <ul>
+            </li>
+          </ul>
+      </div>
+    </div>
+  </div>
+</div>
+</template>
