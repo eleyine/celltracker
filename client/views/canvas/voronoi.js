@@ -1,15 +1,36 @@
-function voronoi() {
+drawVoronoi = function() {
 
+var flat_positions = _.without(_.flatten(_.pluck(Cells.find().fetch(), 'positions'), true), null);
+var xMinDomain = Math.floor(_.min(_.map(flat_positions, function(v) { if(v) { return v[0]; } else { return null; } })));
+var xMaxDomain = Math.ceil(_.max(_.map(flat_positions, function(v) { if(v) { return v[0]; } else { return null; } })));
+var yMinDomain = Math.floor(_.min(_.map(flat_positions, function(v) { if(v) { return v[1]; } else { return null; } })));
+var yMaxDomain = Math.ceil(_.max(_.map(flat_positions, function(v) { if(v) { return v[1]; } else { return null; } })));
+console.log("ymax: " + yMaxDomain);
 // initial canvas configurations
-var margin = {top: 10, right: 20, bottom: 10, left: 20},
-    width = 960,
-    height = 500;
+var m = {top: 10, right: 20, bottom: 10, left: 20},
+    w = $("#chart").width(),
+    h = w*0.618,
+    x = d3.scale.linear().domain([0, xMaxDomain*1.1]).range([0, w]),
+    y = d3.scale.linear().domain([yMaxDomain*1.1, 0]).range([h, 0]);
 
 
-var svg = d3.select("#chart")
+var chart = d3.select("#chart")
   .append("svg:svg")
-    .attr("width", width )
-    .attr("height", height )
+    .attr("width", w + m.left + m.right)
+    .attr("height", h + m.top + m.bottom)
+// .append("svg:svg")     //TSS: used to be append("svg:svg")
+//               .attr("width", w + m.left + m.right)
+//               .attr("height", h + m.top + m.bottom)
+//               .attr("pointer-events", "all") // TSS: Needed detect mouse inputs
+//               .append("svg:g")
+//               .attr("transform", "translate(" + m.top + "," + m.bottom + ")")
+//               .call(d3.behavior.zoom().on("zoom", zoom)) // TSS: ZOOM!
+
+    
+var svg = chart.append("svg:g")
+    .attr("transform", "translate(" + m.top + "," + m.left + ")");
+
+axis();
 
 // drawAxis(svg, width, height, margin);
 
@@ -30,8 +51,9 @@ $( "#time_slider" ).slider({
     })
 
 $( "#diameter_slider" ).slider({
-      value:Session.get("current_diameter"),
-      min: 1,
+      value: Session.get("current_diameter") == 0? 
+        Config.findOne({key: 'MIN_DIAMETER'}).value: Session.get("current_diameter"),
+      min: Config.findOne({key: 'MIN_DIAMETER'}).value,
       max: Config.findOne({key: 'MAX_DIAMETER'}).value,
       step: 1,
       slide: function( event, ui ) {
@@ -50,11 +72,11 @@ function celldata(frameindex) {
     var cell = Cells.findOne({_id: cell});
     cells.push({
       id: cell._id,
-      x: cell.positions[timeframe.index][0],
-      y: cell.positions[timeframe.index][1],
+      x: x(cell.positions[timeframe.index][0]),
+      y: y(cell.positions[timeframe.index][1]),
     });
     if (_.has(color_dict, cell._id) == false) {
-      console.log("key does not exist: "+cell._id);
+      console.log("color key does not exist: "+cell._id);
     }
   });
   return cells;
@@ -66,7 +88,7 @@ function update() {
   clearTimeout(timeout);
 
   d3.transition()
-      .duration(100)
+      .duration(1000)
       .each(draw);
 }
 
@@ -76,7 +98,11 @@ function draw() {
   if (cells == undefined || cells[0] == undefined )
     console.log("UNDEFINED");
 
-  var DIAMETER = Session.get("current_diameter");
+  // TODO: find a way to draw ellipses?
+  var RADIUS = Session.get("current_diameter") / 2;
+  console.log("Diameter before:" + RADIUS + ", x: "+ x(RADIUS) + ", y: " + y(RADIUS));
+  RADIUS = (x(RADIUS) + y(RADIUS)) / 2.0;
+  console.log("Diameter after:" + RADIUS);
 
   // initial
   var clipsInit = clips.selectAll("clipPath")
@@ -100,7 +126,7 @@ function draw() {
     .append("svg:circle")
       .attr('cx', function(c) { return c.x;})
       .attr('cy', function(c) { return c.y;})
-      .attr('r', DIAMETER);
+      .attr('r', RADIUS);
 
   var pathsEnter = pathsInit.enter()
     .append("svg:path")
@@ -156,19 +182,81 @@ function draw() {
       d3.select(this)
         .style('fill', d3.rgb(31, 120, 180));
       svg.select('circle#point-'+cells[i].id)
-        .style('fill', d3.rgb(31, 120, 180))
+        .style('fill', d3.rgb(31, 120, 180));
     })
     .on("mouseout", function(d, i) {
       d3.select(this)
         .style("fill", color_dict[d.id]);
       svg.select('circle#point-'+cells[i].id)
         .style('fill', 'black')
+    })
+    .on("click", function(d,i)  {
+      var inspected_cells = Session.get("inspected_cells");
+      if(inspected_cells.indexOf(d.id) == -1) {
+        d3.select(this)
+          .style('fill', d3.rgb(31, 120, 180));
+        svg.select('circle#point-'+cells[i].id)
+          .style('fill', d3.rgb(31, 120, 180));
+        inspected_cells.push(d.id);
+        Session.set("inspected_cells", inspected_cells);
+      } else {
+        d3.select(this)
+          .style("fill", color_dict[d.id]);
+        svg.select('circle#point-'+cells[i].id)
+          .style('fill', 'black');
+        inspected_cells = _.filter(inspected_cells, function(i){ return i != d.id; })
+        Session.set("inspected_cells", inspected_cells);     
+      }
     });
 }
 
 var timeout = setTimeout(function() {
     update();
 }, 1000);
+
+function axis() {
+  var xrule = svg.selectAll("g.x")
+    .data(x.ticks(10))
+    .enter().append("svg:g")
+    .attr("class", "x");
+
+xrule.append("svg:line")
+    .style("stroke", "#ccc")
+    .style("shape-rendering", "crispEdges")
+    .attr("x1", x)
+    .attr("x2", x)
+    .attr("y1", 0)
+    .attr("y2", h);
+
+xrule.append("svg:text")
+    .attr("x", x)
+    .attr("y", -10)
+    .attr("dy", ".71em")
+    .attr("text-anchor", "middle")
+    .text(x.tickFormat(10));
+
+var yrule = svg.selectAll("g.y")
+    .data(y.ticks(10))
+    .enter().append("svg:g")
+    .attr("class", "y");
+
+yrule.append("svg:line")
+    .attr("class", "yLine")
+    .style("stroke", "#ccc")
+    .style("shape-rendering", "crispEdges")
+    .attr("x1", 0)
+    .attr("x2", w)
+    .attr("y1", y)
+    .attr("y2", y);
+
+yrule.append("svg:text")
+    .attr("class", "yText")
+    .attr("x", 15)
+    .attr("y", y)
+    .attr("dy", ".35em")
+    .attr("text-anchor", "middle")
+    .text(y.tickFormat(10));
+}
 
 function drawAxis(svg, w,h,margin) {
   var x = d3.scale.linear().domain([0,1]).range([0,w]);

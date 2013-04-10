@@ -1,53 +1,80 @@
 <template name="cell_canvas">
-    {{#if data_loaded}}
-    <div class="row-fluid ">
-        <div class="well span12">
-        <div class="span3">
-            <p id="time">Time: {{current_time}}</p>
-            <div id="time_slider"></div>
-        </div>
-        <div class="span3">
-            <p id="time">Diameter: {{current_diameter}}</p>
-            <div id="diameter_slider"></div>
-        </div>
-        </div>
-    </div> 
-    <div class="row-fluid">
-        <div class="span9">
-            <div id="chart"></div>
-        </div>
-        <div class="span3" style="display:block; border: 1px solid #ddd; -webkit-border-radius: 4px 0 4px 0;
--moz-border-radius: 4px 0 4px 0;
-border-radius: 4px 0 4px 0; padding-right:30px">
-            <ul>
-            <h3> Statistics </h3>
-            {{#each cells}}
-                <li>Cell {{name}}:
-                <ul>
-                    <li>History: 
-                    <div style="overflow:scroll">
-                    <table class="sort tablesorter table-bordered table-condensed sequence-symbols">
-                        {{#each history}}
-                            {{#if isCurrent}}
-                                <td bgcolor="#dff0d8" style="min-width: 10px;
-  max-width: 10px;" >{{value}}</td>
-                            {{else}}
-                                <td style="min-width: 10px;
-  max-width: 10px;">{{value}}</td>
-                            {{/if}}
-                        {{/each}} 
-                        </tr>
-                    </table>
-                    </div>
-                    </li>
-                    <li>Stability: {{stability}} </li>
-                <ul>
-                </li>
-            {{/each}}
-            </ul>
-        </div>
+  {{#if data_loaded}} 
+
+  <div class="row-fluid">
+    <div class="span9">
+      <div id="chart"></div>
     </div>
-    {{else}}
-    <img src="http://viewvc.svn.mozilla.org/vc/addons/trunk/bandwagon/skin/images/spinner.gif?revision=18591&view=co&pathrev=18591"/>
-    {{/if}}
+    <div class="span3">
+    <div class="well">
+      <div>
+      <p id="time">Time: {{current_time}}</p>
+      <div id="time_slider"></div>
+      </div>
+      <div>
+      <p id="time">Diameter: {{current_diameter}}</p>
+        <div id="diameter_slider"></div>
+      </div>
+      <div>&nbsp</div>
+      <div>
+      <a role="button" class="btn" id="viewStability">View Stability</a>
+      </div>
+    </div>
+    {{#each inspected_cells}}
+    <div class="well" id="{{id}}">
+      <h3 style="color:{{color}}">{{name}}<a href="#" class="close icon-remove-sign pull-right icon-large"></a></h3>
+      <p>Stability: {{stability}} </p>
+      <div style="overflow:scroll">
+              <p style="display: inline-block">History</p>
+              <table class="sort tablesorter table-bordered table-condensed sequence-symbols" style="display: inline-block">
+                {{#each history}}
+                {{#if isCurrent}}
+                <td bgcolor="#dff0d8" style="min-width: 10px;
+                max-width: 10px;" >{{value}}</td>
+                {{else}}
+                <td style="min-width: 10px;
+                max-width: 10px;">{{value}}</td>
+                {{/if}}
+                {{/each}} 
+              </tr>
+            </table>
+      </div>
+      <div style="overflow:scroll">
+              <p style="display: inline-block">Stability history</p>
+              <table class="sort tablesorter table-bordered table-condensed sequence-symbols" style="display: inline-block">
+                {{#each stabilityHistory}}
+                {{#if isCurrent}}
+                <td bgcolor="#dff0d8" style="min-width: 10px;
+                max-width: 50px;" >{{value}}</td>
+                {{else}}
+                <td style="min-width: 10px;
+                max-width: 50px;">{{value}}</td>
+                {{/if}}
+                {{/each}} 
+              </tr>
+            </table>
+      </div>
+    </div>
+    {{/each}}
+    </div>
+  </div>
+ 
+<!-- Modal -->
+<div id="stabilityModal" class="modal hide fade" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-header">
+    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+    <h3 id="myModalLabel">Evolution of cell stability over time</h3>
+  </div>
+  <div class="modal-body">
+    <div id="stabilityChart"></div>
+  </div>
+  <div class="modal-footer">
+    <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+  </div>
+</div>
+  
+
+  {{else}}
+  <img src="http://viewvc.svn.mozilla.org/vc/addons/trunk/bandwagon/skin/images/spinner.gif?revision=18591&view=co&pathrev=18591"/>
+  {{/if}}
 </template>

@@ -7,7 +7,7 @@ Meteor.startup(function () {
     // load json
     var require = __meteor_bootstrap__.require;
     var fs = require('fs');
-    var cells_json = JSON.parse(fs.readFileSync('server/fixtures/cells.json', 'UTF8'));
+    var cells_json = JSON.parse(fs.readFileSync('server/fixtures/cells_20.json', 'UTF8'));
     var colors_json = JSON.parse(fs.readFileSync('server/fixtures/colors.json', 'UTF8'));
 
     // populate Cells collection
@@ -54,11 +54,17 @@ Meteor.startup(function () {
     // populate Configurations
     Config.insert({
       key: 'MAX_DIAMETER',
-      value: 30
+      value: 55
+    })
+
+    Config.insert({
+      key: 'MIN_DIAMETER',
+      value: 45
     })
 
     // do preliminary analysis
     var MAX_DIAMETER = Config.findOne({key:'MAX_DIAMETER'}).value;
-      analyze(_.range(1, MAX_DIAMETER+1));
+    var MIN_DIAMETER = Config.findOne({key:'MIN_DIAMETER'}).value;
+      analyze(_.range(MIN_DIAMETER, MAX_DIAMETER+1));
     }
 });

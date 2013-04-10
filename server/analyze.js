@@ -1,7 +1,7 @@
 function analyze(diameters) {
 
     _.each(diameters, function (diameter) {
-        console.log("Analyzing diameter: " + diameter);
+        console.log("Analyzing diameter: " + diameter + "\n============================");
         Graphs.insert({
             diameter: diameter
         });
@@ -19,8 +19,11 @@ function analyze(diameters) {
         // evaluate stability
 
         var cellHistory = {};
+        var numTimeFrames = _.size(timeFrameGraphs);
+
+        // get history of contacts
         _.each(Cells.find().fetch(), function(cell) {
-            cellHistory[cell._id] = _.range(_.size(timeFrameGraphs));
+            cellHistory[cell._id] = _.range(numTimeFrames);
             _.each(timeFrameGraphs, function(timeFrameGraph, timeFrameIndex) {
                 // console.log(JSON.stringify(timeFrameGraph));
                 if (timeFrameGraph[cell._id] == undefined) {
@@ -33,15 +36,32 @@ function analyze(diameters) {
            // console.log("Cell history:" + cellHistory[cell._id]);
         });
 
+        // evaluate stability history
         var cellStability = {};
+        var cellStabilityHistory = {};
         _.each(Cells.find().fetch(), function(cell) {
-            cellStability[cell._id] = evalStability(cellHistory[cell._id]);
-            Graphs.update({diameter:diameter}, {$set: {stability: cellStability}});
+            var prevHistory = [];
+            cellStabilityHistory[cell._id] = _.range(numTimeFrames);
+            _.each(cellHistory[cell._id], function(contacts, timeFrameIndex) {
+                var stability = evalStability(
+                    {precomputed: true},
+                    prevHistory,
+                    contacts)
+                cellStabilityHistory[cell._id][timeFrameIndex] = stability;
+                prevHistory.push(stability);
+            });
+            // normalize stability by dividing by the length of the time frame
+            // cellStability[cell._id] = _.map(cellStability[cell._id], function(d, i) {
+            //     return d / i;
+            // });
+            cellStability[cell._id] = cellStabilityHistory[cell._id][numTimeFrames-1];
+            Graphs.update({diameter:diameter}, {$set: 
+                {stability: cellStability, 
+                stabilityHistory: cellStabilityHistory}});
         });
 
         _.each(Cells.find().fetch(), function(cell) {
-            console.log("    Cell "+ cell._id + ":\n  History: " + cellHistory[cell._id] + 
-                "\n  Stability: " + cellStability[cell._id]);
+            console.log("    Cell "+ cell._id + ":\n  StabilityHistory: " + cellStabilityHistory[cell._id]);
         });
     });
 
@@ -49,19 +69,43 @@ function analyze(diameters) {
     // [1,0,1,0,1] => 3
     // [1,1,1,0,0] => 1+2+3 = 6
     // [2,0,1] = [0,1,1] => 3 (maybe this is a problem...)
-    function evalStability(neighbors) {
+    function evalStability(method, history, lastContacts) {
+
         var score = 0;
         var prev = 0;
-        _.each(neighbors, function(contacts) {
-            var cur;
-            if(contacts == 0){
-                cur = 0;
+
+        function singlePointStability(contacts) {
+            var score = 0;
+            if(contacts > 0) {
+                score = 1 + Math.log(contacts);
             } else {
-                cur = prev + contacts;
+                score = 0;
             }
-            score += cur;
-            prev = cur;
-        });
+            return score;
+        }
+
+        if(method['precomputed']) {
+            if(history.length) {
+                prev = history[history.length-1];
+            }
+            if(lastContacts > 0) {
+                score =  prev + singlePointStability(lastContacts);
+            } else {
+                score = prev;
+            }
+            // otherwise the score is 0
+        } else {
+            _.each(history, function(contacts) {
+                var cur;
+                if(contacts == 0){
+                    cur = 0;
+                } else {
+                    cur = prev + singlePointStability(contacts);
+                }
+                score += cur;
+                prev = cur;
+            });
+        }
         return score;
     }
 
