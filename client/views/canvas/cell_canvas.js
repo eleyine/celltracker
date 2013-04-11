@@ -63,6 +63,7 @@ Template.cell_canvas.rendered = function () {
 
     if(Config.find().count() > 0) {
       drawVoronoi();
+
       drawStabilityChart();
     }
     $('#viewStability').click(function(){
@@ -83,39 +84,41 @@ Template.cell_canvas.rendered = function () {
 
 function drawStabilityChart() {
   console.log("Drawing stability...");
-  var chart = new Highcharts.Chart({
-            chart: {
-                renderTo: 'stabilityChart',
-                type: 'line',
-                width: 980
-            },
-            xAxis: {
-                title: {
-                  text: 'Timeframes'
-                }
-            },
-            yAxis: {
-                title: {
-                    text: 'Stability'
-                }
-            },
-            tooltip: {
-                enabled: false,
-                formatter: function() {
-                    return '<b>'+ this.series.name +'</b><br/>'+
-                        this.x +': '+ this.y +'°C';
-                }
-            },
-            plotOptions: {
-                line: {
-                    dataLabels: {
-                        enabled: true,
-                    },
-                    enableMouseTracking: true
-                }
-            },
-            series: getSeries()
-        });
+
+  if(Highcharts) {
+    var chart = new Highcharts.Chart({
+              chart: {
+                  renderTo: 'stabilityChart',
+                  type: 'line',
+                  width: 980
+              },
+              xAxis: {
+                  title: {
+                    text: 'Timeframes'
+                  }
+              },
+              yAxis: {
+                  title: {
+                      text: 'Stability'
+                  }
+              },
+              tooltip: {
+                  enabled: false,
+                  formatter: function() {
+                      return '<b>'+ this.series.name +'</b><br/>'+
+                          this.x +': '+ this.y +'°C';
+                  }
+              },
+              plotOptions: {
+                  line: {
+                      dataLabels: {
+                          enabled: true,
+                      },
+                      enableMouseTracking: true
+                  }
+              },
+              series: getSeries()
+          });}
 
   function getSeries() {
     var visible = Session.get("inspected_cells");
