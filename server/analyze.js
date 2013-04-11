@@ -1,4 +1,4 @@
-function analyze(diameters) {
+analyze = function (diameters) {
 
     _.each(diameters, function (diameter) {
         console.log("Analyzing diameter: " + diameter + "\n============================");

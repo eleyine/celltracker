@@ -5,8 +5,7 @@ Meteor.startup(function () {
     console.log("Building database.");
 
     // load json
-    var require = __meteor_bootstrap__.require;
-    var fs = require('fs');
+    var fs = Npm.require('fs');
     var cells_json = JSON.parse(fs.readFileSync('server/fixtures/cells_20.json', 'UTF8'));
     var colors_json = JSON.parse(fs.readFileSync('server/fixtures/colors.json', 'UTF8'));
 
